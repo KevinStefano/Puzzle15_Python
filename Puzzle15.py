@@ -13,6 +13,7 @@ class Matrix(object) :
     def __setitem__(self,indeksi, indeksj, data):
         self[indeksi][indeksj] = data
 
+
 def printMatriks (matriks):
     print("Bentuk Puzzlenya adalah : ")
     print("+----+----+----+----+")
@@ -29,7 +30,7 @@ def printMatriks (matriks):
         print()
         print("+----+----+----+----+")
             
-def checkAwalMatriks (matriks):
+def checkReachableGoal (matriks):
     #cari index yang kosong
     for i in range(4):
         for j in range(4):
@@ -37,16 +38,62 @@ def checkAwalMatriks (matriks):
                 break
         if matriks[i][j]==0:
                 break
+
+    #Cari nilai X
+    if ((i==0 or i==2) and (j==1 or j==3)) or ((i==1 or i==3) and (j==0 or j==2)):
+        x = 1
+    else:
+        x = 0
+
+    
+    #cari nilai fungsi KURANG(i)
+    kurang = 0
+    #itterasi tiap element matriks
+    for k in range(4):
+        for l in range(4):
+            #check tiap element matriks
+            if l==3 and k<3:
+                m= k+1  #baris
+                n= 0    #kolom
+                stop=0
+            elif l==3 and k==3:
+                stop =1
+            else:
+                m = k
+                n = l+1
+                stop=0
+            while (m<4 and stop==0):
+                while (n<4):
+                    if (matriks[m][n]<matriks[k][l] and matriks[m][n]!=0 and matriks[k][l]!=0):
+                        kurang=kurang+1
+                    n=n+1
+                n=0
+                m=m+1
+    #hitung total
+    kurang = kurang+x
+    #check apakah genap atau bukan
+    if kurang%2==0:
+        return 1; #bisa
+    else:
+        return 0 #tidakbisa
+            
+            
+
+#MAIN           
 #Masukan file eksternal
 with open('datainput.txt', 'r') as f:
     matriks = [[int(idx) for idx in line.split(' ')] for line in f]
-    print(matriks)
     if len(matriks)!= 4 or len(matriks[0])  != 4:
-        print("Masukan file matriks haris berukuran 4x4");
-        quit()
+        print("Masukan file matriks harus berukuran 4x4");
+    else:
+        #matrixA = Matrix()
+        #matrixA[0][1] = 5
+        printMatriks(matriks)
+
+        if (checkReachableGoal(matriks)==0):
+            print("Matriks tidak bisa di proses")
+     
+            
+    
 
 
-#matrixA = Matrix()
-#matrixA[0][1] = 5
-print(matriks[0][1])
-printMatriks(matriks)
