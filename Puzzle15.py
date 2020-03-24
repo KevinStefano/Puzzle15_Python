@@ -1,24 +1,14 @@
 #Name   : Kevin Austin Stefano
 #NIM    : 13518104
 
-import collections 
-
-class Matrix(object) :
-    def __init__ (self):
-        self = [[0 for x in range(4)] for y in range(4)]
-
-    def __getitem__(self,indeksi, indeksj):
-        return self[indeksi][indeksj]
-
-    def __setitem__(self,indeksi, indeksj, data):
-        self[indeksi][indeksj] = data
-
+import collections
+import time
 
 def printMatriks (matriks):
     print("Bentuk Puzzlenya adalah : ")
     print("+----+----+----+----+")
     for i in range(4):
-        print("",end='| ')
+        print("", end='| ')
         for j in range(4):
             if matriks[i][j]<10 and matriks[i][j]>0:
                 print(matriks[i][j],end='  | ')
@@ -98,88 +88,138 @@ def whereKotakKosong(matriks):
             break;
     return i,j
 
-def AddQueue(queue, idxi, idxj, cost):
-    if queue:
-        i,j,c = queue[0]
-        if c>=cost:
-            queue.appendleft((idxi,idxj,cost))
-        else:
-            queue.append((idxi,idxj,cost))
-    else:
-        queue.append((idxi,idxj,cost))
-
-def swipeAndCheck(matriks, queue, kosongI, kosongJ, swipeI, swipeJ,langkah,savedArray):
-    cost = 0
-    
+def swipeAndCheck(matriks, queue, kosongI, kosongJ, swipeI, swipeJ,langkah, cost0):
+    costNow = 0
+    langkah = langkah +1
     if (swipeI==kosongI-1 and swipeJ==kosongJ) or (swipeI==kosongI+1 and swipeJ==kosongJ) or (swipeJ==kosongJ+1 and swipeI==kosongI) or (swipeJ==kosongJ-1 and swipeI==kosongI):
         matriks[kosongI][kosongJ] =matriks[swipeI][swipeJ]
         matriks[swipeI][swipeJ]=0
-        cost = checkDenganSusunanAkhir(matriks)+langkah
-        AddQueue(queue,swipeI,swipeJ,cost)
-        savedArray.append(matriks)
+        costNow = checkDenganSusunanAkhir(matriks)+langkah
+        
+        matriksacuan = []
+        for k in range(4):
+            new=[]
+            for l in range(4):
+                new.append(matriks[k][l])
+            matriksacuan.append(new)              
+        if (len(queue)!=0):
+            if cost0>=costNow:
+                queue.appendleft((matriksacuan,costNow,langkah))
+                
+            else:
+                queue.append((matriksacuan,costNow,langkah))
+                
+        else:
+            queue.append((matriksacuan,costNow,langkah))
+            
+                
         matriks[swipeI][swipeJ]=matriks[kosongI][kosongJ]
         matriks[kosongI][kosongJ] = 0
+        
+def checkUDLRandAddQueue(queue,queuePath,sumsimpul):
     
-def checkUDLRandAddQueue(matriks, queue, langkah, savedArray):
-    i,j=whereKotakKosong(matriks)
-    kosongI,kosongJ,cost= queue[0]
-    temp =matriks[kosongI][kosongJ]
-    matriks[kosongI][kosongJ]=0
-    matriks[i][j] = temp
-    #printMatriks(matriks)
-    
-    #print(queue)
-    if 1+1==2:
-    #matriks in savedArray:
-     #   queue.popleft()
-     #   return 0
-    #else:
-        count =checkDenganSusunanAkhir(matriks)
-        if count==0:
-            return 1
-        else:
-            #print(queue)
-            queue.popleft()
-
-            #checkjika UP
-            if (kosongI-1>=0):
-                swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI-1,kosongJ,langkah,savedArray)
+    matriks,c,langkah = queue[0]
+    kosongI,kosongJ = whereKotakKosong(matriks)
+    count =checkDenganSusunanAkhir(matriks)
+    if count==0:
+        return 1
+    else:
+        matriksPath= []
+        for k in range(4):
+            new=[]
+            for l in range(4):
+                new.append(matriks[k][l])
+            matriksPath.append(new)
+        queuePath.appendleft((matriksPath,c,langkah))
+        del queue[0]
+        
+        #checkjika UP    
+        if (kosongI-1>=0):
+            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI-1,kosongJ,langkah,c)
+            sumsimpul.append(1)
             
-            #checkjika DOWN
-            if (kosongI+1<=3):
-                swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI+1,kosongJ,langkah,savedArray)
-                
-            #checkjika LEFT
-            if (kosongJ-1>=0):
-                swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ-1,langkah,savedArray)
-           
+        #checkjika DOWN
+        if (kosongI+1<=3):
+            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI+1,kosongJ,langkah,c)            
+            sumsimpul.append(1)
             
-            #checkjika RIGHT
-            if (kosongJ+1<=3):
-                swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ+1,langkah,savedArray)
-            return 0   
+        #checkjika LEFT
+        if (kosongJ-1>=0):
+            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ-1,langkah,c)
+            sumsimpul.append(1)
+            
+        #checkjika RIGHT
+        if (kosongJ+1<=3):
+            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ+1,langkah,c)
+            sumsimpul.append(1)
+        
+        mat,cos,walk = queue[0]
+        matB, cosB, walkB = queuePath[0]
+        if(walk==walkB):
+            del queuePath[0]
+        elif(walkB>walk):
+            while(walk>walkB):
+                del queuePath[0]
+                matB, cosB, walkB = queuePath[0]
+        return 0
     
 #MAIN
 #Masukan file eksternal
-with open('datainput.txt', 'r') as f:
+filemasuk = input("Masukkan nama file (contoh: datainput.txt'): ")
+with open(filemasuk, 'r') as f:
     matriks = [[int(idx) for idx in line.split(' ')] for line in f]
     if len(matriks)!= 4 or len(matriks[0])  != 4:
         print("Masukan file matriks harus berukuran 4x4");
     else:
-
         if (checkReachableGoal(matriks)==0):
             print("Matriks tidak bisa di proses")
         else:
+            printMatriks(matriks)
+            print("================Pilihan proses========================")
+            print("1. Menampilkan matriks selama proses BnB")
+            print("2. Menampilkan matriks path dari simpul awal ke goal")
+            print("   *)tidak menampilkan proses BnBnya")
+            print("=======================================================")
+            masukkan = input("Input : ")
+            while (masukkan!='1' and masukkan!='2'):
+                print("Nilai input salah")
+                masukkan = input("Input : ")
             
-            i=1
-            baris,kolom = whereKotakKosong(matriks)
-            queue = collections.deque([(baris,kolom,0)])
-            
-            savedArray = matriks
+            i=0
+            sumsimpul = collections.deque()
+            queue = collections.deque([(matriks,999,i)])
+            queuePath = collections.deque()
+
+            starttime = time.time()
+            printtimeTotal = 0
             while(queue):
-                if (checkUDLRandAddQueue(matriks,queue,i,savedArray)==1):
+                checker =  checkUDLRandAddQueue(queue,queuePath,sumsimpul)
+                if (masukkan=='1'):
+                    printtimestart = time.time()
+                    ma,co,i = queue[0]
+                    print("----Jarak simpul ke akar :",i,"----")
+                    printMatriks(ma)
+                    printtimefinal = time.time()
+                    printtimeTotal = printtimeTotal + (printtimefinal-printtimestart)
+                if checker==1:
                     break
-                i=i+1
+            
+            finaltime = time.time() - printtimeTotal
+            if(masukkan=='2'):
+                p=1
+                i= len(queuePath)
+                while (i!=0):
+                    print("----Langkah ke-",p,"----")
+                    ma, c, l = queuePath[i-1]
+                    printMatriks(ma)
+                    i=i-1
+                    p=p+1
+                
+                print("====Langkah ke-",p,"====")
+                ma, c, l = queue[0]
+                printMatriks(ma)
+            print("Time execution algorithm :", finaltime-starttime)
+            print("Jumlah simpul yang dibangkitkan :",len(sumsimpul))
 
          
 
