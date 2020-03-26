@@ -88,37 +88,57 @@ def whereKotakKosong(matriks):
             break;
     return i,j
 
-def swipeAndCheck(matriks, queue, kosongI, kosongJ, swipeI, swipeJ,langkah, cost0):
+def swipeAndCheck(matriks, queue, kosongI, kosongJ, swipeI, swipeJ,langkah, cost0, queuePath):
     costNow = 0
     langkah = langkah +1
+    if len(queuePath)!=0:
+        mat= queuePath[0]
+    else:
+        mat=[[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    
     if (swipeI==kosongI-1 and swipeJ==kosongJ) or (swipeI==kosongI+1 and swipeJ==kosongJ) or (swipeJ==kosongJ+1 and swipeI==kosongI) or (swipeJ==kosongJ-1 and swipeI==kosongI):
         matriks[kosongI][kosongJ] =matriks[swipeI][swipeJ]
         matriks[swipeI][swipeJ]=0
         costNow = checkDenganSusunanAkhir(matriks)+langkah
-        
-        matriksacuan = []
-        for k in range(4):
-            new=[]
-            for l in range(4):
-                new.append(matriks[k][l])
-            matriksacuan.append(new)              
-        if (len(queue)!=0):
-            if cost0>=costNow:
-                queue.appendleft((matriksacuan,costNow,langkah))
-                
+        isTrue = 0
+        for i in range(4):
+            for j in range(4):
+                if mat[i][j] != matriks[i][j]:
+                    isTrue = 1
+                    break
+            if mat[i][j] != matriks[i][j]:
+                isTrue = 1
+                break
+
+        if isTrue ==1:    
+            matriksacuan = []
+            for k in range(4):
+                new=[]
+                for l in range(4):
+                    new.append(matriks[k][l])
+                matriksacuan.append(new)              
+            if (len(queue)!=0):
+                if cost0>=costNow:
+                    queue.appendleft((matriksacuan,costNow,langkah))
+                else:
+                    queue.append((matriksacuan,costNow,langkah))    
             else:
                 queue.append((matriksacuan,costNow,langkah))
-                
-        else:
-            queue.append((matriksacuan,costNow,langkah))
-            
-                
         matriks[swipeI][swipeJ]=matriks[kosongI][kosongJ]
         matriks[kosongI][kosongJ] = 0
-        
-def checkUDLRandAddQueue(queue,queuePath,sumsimpul):
-    
-    matriks,c,langkah = queue[0]
+        return isTrue
+def MinQueue(queue):
+    min = 0
+    for i in range(len(queue)):
+        mat,c,l = queue[i]
+        mat2, c2, l2 = queue[min]
+        if c < c2: 
+            min = i
+    return min
+
+def checkUDLRandAddQueue(queue,queuePath,sumsimpul,queueBefore):
+    min = MinQueue(queue)
+    matriks,c,langkah = queue[min]
     kosongI,kosongJ = whereKotakKosong(matriks)
     count =checkDenganSusunanAkhir(matriks)
     if count==0:
@@ -131,30 +151,46 @@ def checkUDLRandAddQueue(queue,queuePath,sumsimpul):
                 new.append(matriks[k][l])
             matriksPath.append(new)
         queuePath.appendleft((matriksPath,c,langkah))
-        del queue[0]
+        del queue[min]
         
         #checkjika UP    
         if (kosongI-1>=0):
-            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI-1,kosongJ,langkah,c)
-            sumsimpul.append(1)
+            isU = swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI-1,kosongJ,langkah,c,queueBefore)
+            if isU==1:
+                sumsimpul.append(1)
             
         #checkjika DOWN
         if (kosongI+1<=3):
-            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI+1,kosongJ,langkah,c)            
-            sumsimpul.append(1)
+            isD = swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI+1,kosongJ,langkah,c,queueBefore)            
+            if isD==1:
+                sumsimpul.append(1)
             
         #checkjika LEFT
         if (kosongJ-1>=0):
-            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ-1,langkah,c)
-            sumsimpul.append(1)
+            isL = swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ-1,langkah,c,queueBefore)
+            if isL==1:
+                sumsimpul.append(1)
             
         #checkjika RIGHT
         if (kosongJ+1<=3):
-            swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ+1,langkah,c)
-            sumsimpul.append(1)
-        
-        mat,cos,walk = queue[0]
+            isR = swipeAndCheck(matriks,queue,kosongI,kosongJ,kosongI,kosongJ+1,langkah,c,queueBefore)
+            if isR==1:
+                sumsimpul.append(1)
+
+        min = MinQueue(queue)
+        mat,cos,walk = queue[min]
         matB, cosB, walkB = queuePath[0]
+
+        if len(queueBefore)!=0:
+            del queueBefore[0]
+        matriksBefore = []
+        for o in range(4):
+            matrik=[]
+            for p in range(4):
+                matrik.append(matB[o][p])
+            matriksBefore.append(matrik)
+        queueBefore.appendleft(matriksBefore)
+        
         if(walk==walkB):
             del queuePath[0]
         elif(walkB>walk):
@@ -165,7 +201,10 @@ def checkUDLRandAddQueue(queue,queuePath,sumsimpul):
     
 #MAIN
 #Masukan file eksternal
-filemasuk = input("Masukkan nama file (contoh: datainput.txt'): ")
+print("Masukkan nama file")
+print("- Jika file test dan source code dalam 1 folder langsung ketik datainput.txt")
+print("- Jika file test dan source code tidak dalam 1 folder, ketikkan juga lokasinya cth: D:/Tucil3StrAlgo-13518104/test/datainput.txt")
+filemasuk = input("Nama file: ")
 with open(filemasuk, 'r') as f:
     matriks = [[int(idx) for idx in line.split(' ')] for line in f]
     if len(matriks)!= 4 or len(matriks[0])  != 4:
@@ -174,50 +213,31 @@ with open(filemasuk, 'r') as f:
         if (checkReachableGoal(matriks)==0):
             print("Matriks tidak bisa di proses")
         else:
-            printMatriks(matriks)
-            print("================Pilihan proses========================")
-            print("1. Menampilkan matriks selama proses BnB")
-            print("2. Menampilkan matriks path dari simpul awal ke goal")
-            print("   *)tidak menampilkan proses BnBnya")
-            print("=======================================================")
-            masukkan = input("Input : ")
-            while (masukkan!='1' and masukkan!='2'):
-                print("Nilai input salah")
-                masukkan = input("Input : ")
             
             i=0
             sumsimpul = collections.deque()
             queue = collections.deque([(matriks,999,i)])
             queuePath = collections.deque()
-
+            queueBefore = collections.deque() 
             starttime = time.time()
-            printtimeTotal = 0
             while(queue):
-                checker =  checkUDLRandAddQueue(queue,queuePath,sumsimpul)
-                if (masukkan=='1'):
-                    printtimestart = time.time()
-                    ma,co,i = queue[0]
-                    print("----Jarak simpul ke akar :",i,"----")
-                    printMatriks(ma)
-                    printtimefinal = time.time()
-                    printtimeTotal = printtimeTotal + (printtimefinal-printtimestart)
+                checker =  checkUDLRandAddQueue(queue,queuePath,sumsimpul,queueBefore)
                 if checker==1:
                     break
             
-            finaltime = time.time() - printtimeTotal
-            if(masukkan=='2'):
-                p=1
-                i= len(queuePath)
-                while (i!=0):
-                    print("----Langkah ke-",p,"----")
-                    ma, c, l = queuePath[i-1]
-                    printMatriks(ma)
-                    i=i-1
-                    p=p+1
-                
-                print("====Langkah ke-",p,"====")
-                ma, c, l = queue[0]
+            finaltime = time.time()
+            p=0
+            i= len(queuePath)
+            while (i!=0):
+                print("----Langkah ke-",p,"----")
+                ma, c, l = queuePath[i-1]
                 printMatriks(ma)
+                i=i-1
+                p=p+1
+                
+            print("====Langkah ke-",p,"====")
+            ma, c, l = queue[0]
+            printMatriks(ma)
             print("Time execution algorithm :", finaltime-starttime)
             print("Jumlah simpul yang dibangkitkan :",len(sumsimpul))
 
